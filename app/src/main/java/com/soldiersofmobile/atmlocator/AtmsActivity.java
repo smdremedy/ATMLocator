@@ -1,15 +1,24 @@
 package com.soldiersofmobile.atmlocator;
 
-import android.support.v4.app.FragmentActivity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.j256.ormlite.dao.Dao;
 
-public class AtmsActivity extends FragmentActivity {
+import java.sql.SQLException;
+import java.util.List;
 
+public class AtmsActivity extends ActionBarActivity {
+
+    public static final int REQUEST_CODE = 123;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
     @Override
@@ -23,6 +32,22 @@ public class AtmsActivity extends FragmentActivity {
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == R.id.action_add) {
+            Intent intent = new Intent(this, AddAtmActivity.class);
+            startActivityForResult(intent, REQUEST_CODE);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     /**
@@ -60,6 +85,25 @@ public class AtmsActivity extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+//        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+        try {
+            DBHelper dbHelper = ((App) getApplication()).getDbHelper();
+
+            Dao<Atm, Long> dao = dbHelper.getDao(Atm.class);
+            Dao<Bank, String> bankDao = dbHelper.getDao(Bank.class);
+            List<Atm> atms = dao.queryForAll();
+            for (Atm atm : atms) {
+
+                bankDao.refresh(atm.getBank());
+
+                mMap.addMarker(new MarkerOptions().position(new LatLng(atm.getLatitiude(), atm.getLongitude())).title(atm.getAddress()).snippet("S:" + atm.getBank().getPhone()));
+
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(atm.getLatitiude(), atm.getLongitude()), 16f));
+
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

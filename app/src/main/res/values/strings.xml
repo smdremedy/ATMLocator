@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">ATMLocator</string>
     <string name="title_activity_atms">Map</string>
+    <string name="title_activity_add_atm">AddAtmActivity</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
 </resources>
